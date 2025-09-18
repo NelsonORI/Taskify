@@ -1,27 +1,48 @@
 <?php
 require_once 'ClassAutoLoad.php';
 require_once 'vendor/autoload.php';
+require_once 'conf.php';
+require_once 'db_connection.php'; 
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 // Check if the form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
-    $email = $_POST['email'];
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    // 1. Validate the email address
+    // Validate email format
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        // Handle invalid email case
-        echo "Invalid email format.";
-        exit;
+        die("Invalid email format.");
     }
 
-    // 2. Send the email notification
+    // Hash the password for security
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+    // Database Insertion
+    try {
+        // Use the existing $pdo connection from db_connection.php
+        $sql = "INSERT INTO users (email, password) VALUES (?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$email, $hashed_password]);
+
+        echo "User registered successfully. Proceeding to send confirmation email...<br>";
+
+    } catch (PDOException $e) {
+        // Handle database errors (e.g., duplicate email)
+        if ($e->getCode() === '23505') {
+            die("Error: Email already exists.");
+        } else {
+            die("Database error: " . $e->getMessage());
+        }
+    }
+
+    // Email Sending
     $mail = new PHPMailer(true);
 
     try {
-        //Server settings
+        // Server settings
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
@@ -30,14 +51,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
-        //Recipients
-        $mail->setFrom('no-reply@your-app.com', 'Taskify');
-        $mail->addAddress($email, $username); // Add a recipient
+        // Recipients
+        $mail->setFrom($conf['site_email'], $conf['site_name']);
+        $mail->addAddress($email);
 
-        //Content
+        // Content
         $mail->isHTML(true);
-        $mail->Subject = 'Welcome to Taskify';
-        $mail->Body    = "Hello {$username},<br><br>You requested an account on Taskify. In order to use this account you need to <a href='#'>Click Here</a> to complete the registration process.<br><br>Regards,<br>Systems Admin<br>Taskify";
+        $mail->Subject = 'Welcome to ' . $conf['site_name'];
+        $mail->Body    = "Hello,<br><br>You have successfully signed up for an account on {$conf['site_name']}. Please check out the admin dashboard to see your account listed.<br><br>Regards,<br>Systems Admin<br>{$conf['site_name']}";
         
         $mail->send();
         echo 'Message has been sent successfully. Please check your email.';
@@ -45,5 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
     }
+} else {
+    echo "Form was not submitted.";
 }
 ?>

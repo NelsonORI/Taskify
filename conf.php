@@ -1,7 +1,7 @@
 <?php
 // Site configuration
-$conf['site_name'] = "BBIT DevOps";
-$conf['site_email'] = "info@bbit.edu";
+$conf['site_name'] = "Taskify";
+$conf['site_email'] = "info@taskify.com";
 $conf['site_url'] = "http://localhost:8000/dol";
 
 // Site language

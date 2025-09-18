@@ -3,6 +3,9 @@
 require_once 'ClassAutoLoad.php';
 require_once 'db_connection.php'; // Your database connection script
 
+// Assuming db_connection.php provides a $pdo object and conf.php is also loaded
+global $pdo, $conf;
+
 $layoutsInstance = new layouts();
 
 $layoutsInstance->heading($conf);
@@ -10,29 +13,47 @@ $layoutsInstance->heading($conf);
 // Start the user list section
 echo "<div class='container mt-5'>";
 echo "<h2 class='text-center'>Registered Users</h2>";
-echo "<ol class='list-group list-group-numbered'>";
 
 try {
-    // Write your SQL query to select users in ascending order
-    $sql = "SELECT * FROM users";
+    // Write your SQL query to select email and created_at
+    // Do NOT select the password field for security
+    $sql = "SELECT email, created_at FROM users ORDER BY created_at ASC";
     $stmt = $pdo->query($sql);
 
     // Fetch all user rows
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if ($users) {
-        // Loop through each user and display them as a list item
+        // Display users in a responsive Bootstrap table
+        echo "<div class='table-responsive mt-4'>";
+        echo "<table class='table table-striped table-hover align-middle'>";
+        echo "<thead class='table-dark'>";
+        echo "<tr>";
+        echo "<th>Email</th>";
+        echo "<th>Registered On</th>";
+        echo "</tr>";
+        echo "</thead>";
+        echo "<tbody>";
+
+        // Loop through each user and display them as a table row
         foreach ($users as $user) {
-            echo "<li class='list-group-item'>{$user['email']}</li>";
+            // Format the date for better readability
+            $formatted_date = date("F j, Y, g:i a", strtotime($user['created_at']));
+            echo "<tr>";
+            echo "<td>" . htmlspecialchars($user['email']) . "</td>";
+            echo "<td>" . htmlspecialchars($formatted_date) . "</td>";
+            echo "</tr>";
         }
+        echo "</tbody>";
+        echo "</table>";
+        echo "</div>";
     } else {
-        echo "<li class='list-group-item'>No users found.</li>";
+        echo "<div class='alert alert-info mt-4' role='alert'>No users found.</div>";
     }
 } catch (PDOException $e) {
-    echo "<li class='list-group-item text-danger'>Database query failed: " . $e->getMessage() . "</li>";
+    echo "<div class='alert alert-danger mt-4' role='alert'>Database query failed: " . htmlspecialchars($e->getMessage()) . "</div>";
 }
 
-echo "</ol>";
 echo "</div>";
 
 $layoutsInstance->footer($conf);
