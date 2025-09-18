@@ -8,8 +8,9 @@ $conf['site_url'] = "http://localhost:8000/dol";
 $conf['language'] = "en";
 
 // Database constants
-$conf['db_type'] = "pdo";
+$conf['db_type'] = "psql";
 $conf['db_host'] = "localhost";
-$conf['db_user'] = "root";
-$conf['db_pass'] = "";
-$conf['db_name'] = "dol";
+$conf['db_user'] = "postgres";
+$conf['db_pass'] = "postgres";
+$conf['db_name'] = "php";
+$conf['db_port'] = "5432";
